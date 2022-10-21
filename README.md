@@ -1,3 +1,5 @@
+[![CodeFactor](https://www.codefactor.io/repository/github/ryeera/thready/badge/main)](https://www.codefactor.io/repository/github/ryeera/thready/overview/main)
+
 # Thready
 Thready is a Discord-Bot which can be used to automatically create Threads in configured channels for certain types of messages!
 
