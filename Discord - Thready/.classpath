@@ -37,5 +37,6 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="/files/Files/DragoLibs/DragoLogger.jar"/>
 	<classpathentry kind="lib" path="/files/Files/DragoLibs/JSONUtils.jar"/>
+	<classpathentry kind="lib" path="/files/Files/DragoLibs/SQLConnector_old.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
