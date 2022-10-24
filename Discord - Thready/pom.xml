@@ -1,9 +1,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>de.Ryeera</groupId>
-  <artifactId>AutoThreader</artifactId>
-  <version>0.0.1</version>
-  <name>AutoThreader</name>
+  <artifactId>Thready</artifactId>
+  <version>0.1.1</version>
+  <name>Thready</name>
   <repositories>
     <repository>
       <id>dv8tion</id>
@@ -15,7 +15,7 @@
   	<dependency>
       <groupId>net.dv8tion</groupId>
       <artifactId>JDA</artifactId>
-      <version>5.0.0-alpha.21</version>
+      <version>5.0.0-alpha.22</version>
       <exclusions>
         <exclusion>
             <groupId>club.minnced</groupId>
