@@ -54,82 +54,42 @@ public class FileConfigManager {
 	}
 	
 	private boolean checkConfig(JSONObject config) {
-		// Check /token
-		if (!config.has("token") || config.isNull("token")) {
-			return false;
-		}
 		try {
-			if (!config.getString("token").matches(".{24}\\..{6}\\..{27}")) {
-				return false;
-			}
-		} catch (JSONException e) {
-			return false;
-		}
-		
-		// Check /sql
-		if (!config.has("sql") || config.isNull("sql")) {
-			return false;
-		}
-		try {
+			// Check /token
+			if (!config.has("token") 
+					|| config.isNull("token") 
+					|| !config.getString("token").matches(".{24}\\..{6}\\..{27}")) return false;
+			
+			// Check /sql
+			if (!config.has("sql") 
+					|| config.isNull("sql")) return false;
 			JSONObject sql = config.getJSONObject("sql");
 			
 			// Check /sql/host
-			if (!sql.has("host") || sql.isNull("host")) {
-				return false;
-			}
-			try {
-				if (sql.getString("host").isBlank()) {
-					return false;
-				}
-			} catch (JSONException e) {
-				return false;
-			}
+			if (!sql.has("host") 
+					|| sql.isNull("host") 
+					|| sql.getString("host").isBlank()) return false;
 			
 			// Check /sql/port
-			if (!sql.has("port") || sql.isNull("port")) {
-				return false;
-			}
-			try {
-				if (sql.getInt("port") > 65535 || sql.getInt("port") < 1) {
-					return false;
-				}
-			} catch (JSONException e) {
-				return false;
-			}
+			if (!sql.has("port") 
+					|| sql.isNull("port") 
+					|| sql.getInt("port") > 65535 
+					|| sql.getInt("port") < 1) return false;
 			
 			// Check /sql/user
-			if (!sql.has("user") || sql.isNull("user")) {
-				return false;
-			}
-			try {
-				if (sql.getString("user").isBlank()) {
-					return false;
-				}
-			} catch (JSONException e) {
-				return false;
-			}
+			if (!sql.has("user") 
+					|| sql.isNull("user") 
+					|| sql.getString("user").isBlank()) return false;
 			
 			// Check /sql/pass
-			if (!sql.has("pass") || sql.isNull("pass")) {
-				return false;
-			}
-			try {
-				sql.getString("pass");
-			} catch (JSONException e) {
-				return false;
-			}
+			if (!sql.has("pass") 
+					|| sql.isNull("pass")
+					|| sql.getString("pass").length() < 0) return false;
 			
 			// Check /sql/database
-			if (!sql.has("database") || sql.isNull("database")) {
-				return false;
-			}
-			try {
-				if (sql.getString("database").isBlank()) {
-					return false;
-				}
-			} catch (JSONException e) {
-				return false;
-			}
+			if (!sql.has("database") 
+					|| sql.isNull("database") 
+					|| sql.getString("database").isBlank()) return false;
 		} catch (JSONException e) {
 			return false;
 		}

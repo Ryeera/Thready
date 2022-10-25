@@ -111,30 +111,16 @@ public class DiscordListener extends ListenerAdapter {
 		} else if (event.getButton().getId().startsWith("disable:")) {
 			sql.setEnabled(channel, false);
 			event.editButton(Button.success("enable:" + channel.getId(), "Enable Thready in this Channel")).queue();
-		} else if (event.getButton().getId().startsWith("enableOption:")) {
+		} else if (event.getButton().getId().contains("Option:")) {
 			SelectMenu menu = (SelectMenu) actionRows.get(0).getActionComponents().get(0);
 			int config = Integer.parseInt(menu.getId().split(":")[2]);
-			sql.enableThreadingOption(channel, config);
-			List<ActionComponent> buttons = actionRows.get(1).getActionComponents();
-			ActionRow buttonrow = actionRows.get(1);
-			try {
-				if ((config & sql.getThreadingConfig(guild, channel)) > 0) {
-					buttonrow = ActionRow.of(buttons.get(0).asDisabled(), buttons.get(1).asEnabled());
-				} else {
-					buttonrow = ActionRow.of(buttons.get(0).asEnabled(), buttons.get(1).asDisabled());
-				}
-				event.editComponents(actionRows.get(0), buttonrow, actionRows.get(2)).queue();
-			} catch (SQLException e) {
-				event.reply("🚫 There was an error trying to get your config! Please try again!").queue();
-				logger.log("ERROR", "An error occured trying to get the config for channel " + channel.getId() + " in guild " + event.getGuild().getId() + "!");
-				logger.logStackTrace(e);
+			if (event.getButton().getId().startsWith("enable")) {
+				sql.enableThreadingOption(channel, config);
+			} else {
+				sql.disableThreadingOption(channel, config);
 			}
-		} else if (event.getButton().getId().startsWith("disableOption:")) {
-			SelectMenu menu = (SelectMenu) actionRows.get(0).getActionComponents().get(0);
-			int config = Integer.parseInt(menu.getId().split(":")[2]);
-			sql.disableThreadingOption(channel, config);
 			List<ActionComponent> buttons = actionRows.get(1).getActionComponents();
-			ActionRow buttonrow = actionRows.get(1);
+			ActionRow buttonrow;
 			try {
 				if ((config & sql.getThreadingConfig(guild, channel)) > 0) {
 					buttonrow = ActionRow.of(buttons.get(0).asDisabled(), buttons.get(1).asEnabled());
@@ -156,12 +142,12 @@ public class DiscordListener extends ListenerAdapter {
 	@Override
 	public void onMessageReceived(MessageReceivedEvent event) {
 		// Threads can't be created within these types of channels.
-		if (event.isFromThread()) return;
-		if (event.getChannelType() == ChannelType.CATEGORY) return;
-		if (event.getChannelType() == ChannelType.FORUM) return;
-		if (event.getChannelType() == ChannelType.STAGE) return;
-		if (event.getChannelType() == ChannelType.UNKNOWN) return;
-		if (event.getChannelType() == ChannelType.VOICE) return;
+		if (event.isFromThread()
+				|| event.isFromType(ChannelType.VOICE)
+				|| event.isFromType(ChannelType.FORUM)
+				|| event.isFromType(ChannelType.STAGE)
+				|| event.isFromType(ChannelType.UNKNOWN)
+				|| event.isFromType(ChannelType.CATEGORY)) return;
 		
 		Message message = event.getMessage();
 		MessageChannel channel = event.getChannel();
@@ -173,14 +159,19 @@ public class DiscordListener extends ListenerAdapter {
 				int messageConfig = 1;
 				if (message.getContentRaw().contains("https://") || message.getContentRaw().contains("http://"))
 					messageConfig += 2;
+				boolean hasImage = false, hasVideo = false;
 				for (Attachment a : message.getAttachments()) {
 					if (a.isImage())
-						messageConfig += 4;
+						hasImage = true;
 					else if (a.isVideo())
-						messageConfig += 8;
-					else
-						messageConfig += 16;
+						hasVideo = true;
 				}
+				if (hasImage)
+					messageConfig += 4;
+				if (hasVideo)
+					messageConfig += 8;
+				if (message.getAttachments().size() > 0)
+					messageConfig += 16;
 				if (message.getEmbeds().size() > 0)
 					messageConfig += 32;
 				if (message.getMentions().getCustomEmojis().size() > 0)
@@ -191,6 +182,8 @@ public class DiscordListener extends ListenerAdapter {
 					messageConfig += 256;
 				if (message.getMentions().getRoles().size() > 0)
 					messageConfig += 512;
+				if (message.getStickers().size() > 0)
+					messageConfig += 1024;
 				if ((messageConfig & threadingConfig) > 0) {
 					logger.log("INFO", "Creating thread for message " + message.getId() + "...");
 					message.createThreadChannel("Comments | Discussion").queue(t -> {

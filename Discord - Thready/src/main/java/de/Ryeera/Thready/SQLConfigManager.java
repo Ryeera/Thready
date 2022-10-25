@@ -13,7 +13,7 @@ public class SQLConfigManager {
 	private SQLConnector sql;
 	private DragoLogger logger;
 	private ResultSet cache;
-	private long cacheChannel = 0l;
+	private long cacheChannel = 0;
 	
 	public SQLConfigManager(String host, int port, String user, String pass, String database, DragoLogger logger) {
 		this.logger = logger;
@@ -32,17 +32,20 @@ public class SQLConfigManager {
 	
 	private void clearCache() {
 		try {
-			if (cache != null)
+			if (cache != null && !cache.isClosed())
 				cache.close();
 			cache = null;
-			cacheChannel = 0l;
-		} catch (SQLException e) {}
+			cacheChannel = 0;
+		} catch (SQLException e) {
+			logger.log("WARN", "Exception while closing the ResultSet!");
+			logger.logStackTrace(e);
+		}
 	}
 	
 	private ResultSet getChannelConfig(Guild guild, MessageChannel channel) throws SQLException {
 		if (cacheChannel == channel.getIdLong()) {
 			return cache;
-		} else if (cacheChannel != 0l) {
+		} else if (cacheChannel != 0) {
 			cache.close();
 		}
 		ResultSet channelConfig = sql.executeQuery("SELECT * FROM `channels` WHERE `channel`='" + channel.getId() + "';");
