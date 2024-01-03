@@ -3,7 +3,6 @@ package de.Ryeera.Thready;
 import java.sql.SQLException;
 import java.util.List;
 
-import de.Ryeera.libs.DragoLogger;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
@@ -34,10 +33,10 @@ public class DiscordListener extends ListenerAdapter {
 	@Override
 	public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
 		User sender = event.getUser();
-		logger.log("INFO", "Command received from " + sender.getAsTag() + ": " + event.getCommandPath());
+		logger.log("INFO", "Command received from " + sender.getGlobalName() + " (" + sender.getId() + "): " + event.getFullCommandName());
 		Guild guild = event.getGuild();
 		MessageChannel channel = event.getMessageChannel();
-		String[] command = event.getCommandPath().split("/");
+		String[] command = event.getFullCommandName().split(" ");
 		if (command[0].equals("config")) {
 			if (event.getChannelType().isThread()) {
 				event.reply("🚫 You can't use threads within threads!").queue();
@@ -142,12 +141,10 @@ public class DiscordListener extends ListenerAdapter {
 	@Override
 	public void onMessageReceived(MessageReceivedEvent event) {
 		// Threads can't be created within these types of channels.
-		if (event.isFromThread()
-				|| event.isFromType(ChannelType.VOICE)
-				|| event.isFromType(ChannelType.FORUM)
-				|| event.isFromType(ChannelType.STAGE)
-				|| event.isFromType(ChannelType.UNKNOWN)
-				|| event.isFromType(ChannelType.CATEGORY)) return;
+		if (event.isFromThread()) return;
+		// ChannelTypes are whitelisted to prioritize stability of the bot over support for new ChannelTypes
+		if (!event.isFromType(ChannelType.NEWS)
+				&& !event.isFromType(ChannelType.TEXT)) return;
 		
 		Message message = event.getMessage();
 		MessageChannel channel = event.getChannel();

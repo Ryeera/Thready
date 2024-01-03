@@ -8,9 +8,6 @@ import java.util.concurrent.TimeUnit;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import de.Ryeera.libs.DragoLogger;
-import de.Ryeera.libs.JSONUtils;
-
 public class FileConfigManager {
 
 	private File configFile;

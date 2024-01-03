@@ -2,12 +2,9 @@ package de.Ryeera.Thready;
 
 import java.io.File;
 
-import de.Ryeera.libs.DragoLogger;
-import de.Ryeera.libs.Utils;
-
 public class Thready {
 	
-	public static final String VERSION = "0.2.0";
+	public static final String VERSION = "1.0.0";
 
 	public static FileConfigManager config;
 	public static SQLConfigManager sql;
@@ -17,7 +14,7 @@ public class Thready {
 	public static void main(String[] args) {
 		try {
 			new File("logs").mkdir();
-			logger = new DragoLogger(new File("logs" + File.separator + "thready_" + Utils.formatTime(System.currentTimeMillis(), "yyyyMMdd_HHmmss") + ".log"));
+			logger = new DragoLogger(new File("logs" + File.separator + "thready_" + DragoUtils.formatTime(System.currentTimeMillis(), "yyyyMMdd_HHmmss") + ".log"));
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(1);

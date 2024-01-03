@@ -1,12 +1,12 @@
 package de.Ryeera.Thready;
 
-import de.Ryeera.libs.DragoLogger;
 import net.dv8tion.jda.api.GatewayEncoding;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.JDA.Status;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Activity.ActivityType;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
@@ -30,13 +30,14 @@ public class DiscordConnector {
 	
 	private void setupJDA(String token, ListenerAdapter listener) {
 		JDABuilder builder = JDABuilder.create(GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT);
-		builder.disableCache(CacheFlag.ACTIVITY, CacheFlag.EMOJI, CacheFlag.CLIENT_STATUS, CacheFlag.ONLINE_STATUS, CacheFlag.ROLE_TAGS, CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE);
+		builder.disableCache(CacheFlag.ACTIVITY, CacheFlag.EMOJI, CacheFlag.CLIENT_STATUS, CacheFlag.ONLINE_STATUS, CacheFlag.ROLE_TAGS,
+				CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE, CacheFlag.STICKER, CacheFlag.SCHEDULED_EVENTS);
 		builder.setMemberCachePolicy(MemberCachePolicy.NONE);
 		builder.setChunkingFilter(ChunkingFilter.NONE);
 		builder.setGatewayEncoding(GatewayEncoding.ETF);
 		builder.setStatus(OnlineStatus.ONLINE);
 		builder.setToken(token);
-		builder.setActivity(Activity.watching("for Threads to create"));
+		builder.setActivity(Activity.customStatus("Now Public! Click for more info!"));
 		builder.addEventListeners(listener);
 		try {
 			jda = builder.build();
@@ -77,16 +78,16 @@ public class DiscordConnector {
 					.setDescriptionLocalization(DiscordLocale.GERMAN, "Konfiguriere Thready für diesen Kanal.")
 					.setNameLocalization(DiscordLocale.GERMAN, "konfiguration")
 					.setDefaultPermissions(DefaultMemberPermissions.DISABLED)
-					.setGuildOnly(true),
-			Commands.slash("stats", "Show stats about Thready.")
-					.setDescriptionLocalization(DiscordLocale.GERMAN, "Zeige Statistiken über Thready.")
-					.setNameLocalization(DiscordLocale.GERMAN, "statistiken")
-					.setDefaultPermissions(DefaultMemberPermissions.ENABLED)
 					.setGuildOnly(true)
+//			Commands.slash("stats", "Show stats about Thready.")
+//					.setDescriptionLocalization(DiscordLocale.GERMAN, "Zeige Statistiken über Thready.")
+//					.setNameLocalization(DiscordLocale.GERMAN, "statistiken")
+//					.setDefaultPermissions(DefaultMemberPermissions.ENABLED)
+//					.setGuildOnly(true)
 		);
 		int c = commands.complete().size();
-		if (c < 2) {
-			logger.log("INFO", "Failed to set up " + (2-c) + " commands! Exiting...");
+		if (c < 1) {
+			logger.log("INFO", "Failed to set up " + (1-c) + " commands! Exiting...");
 			jda.shutdownNow();
 			System.exit(3);
 		} else {

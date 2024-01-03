@@ -3,8 +3,6 @@ package de.Ryeera.Thready;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import de.Ryeera.libs.DragoLogger;
-import de.Ryeera.libs.SQLConnector;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 
@@ -17,8 +15,8 @@ public class SQLConfigManager {
 	
 	public SQLConfigManager(String host, int port, String user, String pass, String database, DragoLogger logger) {
 		this.logger = logger;
-		this.sql = new SQLConnector(host, port, user, pass, database);
-		if (this.sql.executeUpdate("CREATE TABLE IF NOT EXISTS `thready`.`channels` ( "
+		sql = new SQLConnector(host, port, user, pass, database, logger);
+		if (sql.executeUpdate("CREATE TABLE IF NOT EXISTS `thready`.`channels` ( "
 				+ "`guild` BIGINT(20) UNSIGNED NOT NULL COMMENT 'The ID of the Guild this Channel belongs to.' , "
 				+ "`channel` BIGINT(20) UNSIGNED NOT NULL COMMENT 'The ID of the Channel.' , "
 				+ "`config` SMALLINT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'The binary-encoded config for this Channel.' , "
