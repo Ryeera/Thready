@@ -6,9 +6,9 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.JDA.Status;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.Activity.ActivityType;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
+import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -37,7 +37,7 @@ public class DiscordConnector {
 		builder.setGatewayEncoding(GatewayEncoding.ETF);
 		builder.setStatus(OnlineStatus.ONLINE);
 		builder.setToken(token);
-		builder.setActivity(Activity.customStatus("Now Public! Click for more info!"));
+		builder.setActivity(Activity.customStatus("v" + Thready.VERSION + ": Now introducing /stats"));
 		builder.addEventListeners(listener);
 		try {
 			jda = builder.build();
@@ -78,12 +78,12 @@ public class DiscordConnector {
 					.setDescriptionLocalization(DiscordLocale.GERMAN, "Konfiguriere Thready für diesen Kanal.")
 					.setNameLocalization(DiscordLocale.GERMAN, "konfiguration")
 					.setDefaultPermissions(DefaultMemberPermissions.DISABLED)
-					.setGuildOnly(true)
-//			Commands.slash("stats", "Show stats about Thready.")
-//					.setDescriptionLocalization(DiscordLocale.GERMAN, "Zeige Statistiken über Thready.")
-//					.setNameLocalization(DiscordLocale.GERMAN, "statistiken")
-//					.setDefaultPermissions(DefaultMemberPermissions.ENABLED)
-//					.setGuildOnly(true)
+					.setContexts(InteractionContextType.GUILD),
+			Commands.slash("stats", "Show stats about Thready.")
+					.setDescriptionLocalization(DiscordLocale.GERMAN, "Zeige Statistiken über Thready.")
+					.setNameLocalization(DiscordLocale.GERMAN, "statistiken")
+					.setDefaultPermissions(DefaultMemberPermissions.ENABLED)
+					.setContexts(InteractionContextType.GUILD)
 		);
 		int c = commands.complete().size();
 		if (c < 1) {

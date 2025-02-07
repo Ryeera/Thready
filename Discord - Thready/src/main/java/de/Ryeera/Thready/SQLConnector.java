@@ -59,7 +59,9 @@ public class SQLConnector {
 							stmt.close();
 						if (rs != null)
 							rs.close();
-					} catch (SQLException e1) {}
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
 					try {
 						Class.forName("com.mysql.cj.jdbc.Driver");
 						conn = DriverManager.getConnection("jdbc:mysql://" + address + 
@@ -98,7 +100,9 @@ public class SQLConnector {
 							stmt.close();
 						if (rs != null)
 							rs.close();
-					} catch (SQLException e1) {}
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
 					try {
 						Class.forName("com.mysql.cj.jdbc.Driver");
 						conn = DriverManager.getConnection("jdbc:mysql://" + address + 
@@ -119,7 +123,9 @@ public class SQLConnector {
 				if (stmt != null) {
 			        try {
 			            stmt.close();
-			        } catch (SQLException e) {}
+			        } catch (SQLException e) {
+			        	e.printStackTrace();
+			        }
 			        stmt = null;
 			    }
 			}

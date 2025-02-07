@@ -64,7 +64,7 @@ public class DiscordListener extends ListenerAdapter {
 				logger.logStackTrace(e);
 			}
 		} else if (command[0].equals("stats")) {
-			event.reply("✅ Stats-Page will be here soon™!").setEphemeral(true).queue();
+			event.replyEmbeds(ThreadyUtils.getChannelStatsEmbed(guild, channel)).setEphemeral(true).queue();
 		} else {
 			event.reply("🚫 This feature has not been implemented yet!").setEphemeral(true).queue();
 		}
@@ -154,8 +154,11 @@ public class DiscordListener extends ListenerAdapter {
 			int threadingConfig = sql.getThreadingConfig(guild, channel);
 			if (threadingConfig != 0) {
 				int messageConfig = 1;
-				if (message.getContentRaw().contains("https://") || message.getContentRaw().contains("http://"))
+				sql.addMessage(channel);
+				if (message.getContentRaw().contains("https://") || message.getContentRaw().contains("http://")) {
 					messageConfig += 2;
+					sql.addLink(channel);
+				}
 				boolean hasImage = false, hasVideo = false;
 				for (Attachment a : message.getAttachments()) {
 					if (a.isImage())
@@ -163,30 +166,49 @@ public class DiscordListener extends ListenerAdapter {
 					else if (a.isVideo())
 						hasVideo = true;
 				}
-				if (hasImage)
+				if (hasImage) {
 					messageConfig += 4;
-				if (hasVideo)
+					sql.addImage(channel);
+				}
+				if (hasVideo) {
 					messageConfig += 8;
-				if (message.getAttachments().size() > 0)
+					sql.addVideo(channel);
+				}
+				if (message.getAttachments().size() > 0) {
 					messageConfig += 16;
-				if (message.getEmbeds().size() > 0)
+					sql.addFile(channel);
+				}
+				if (message.getEmbeds().size() > 0) {
 					messageConfig += 32;
-				if (message.getMentions().getCustomEmojis().size() > 0)
+					sql.addEmbed(channel);
+				}
+				if (message.getMentions().getCustomEmojis().size() > 0) {
 					messageConfig += 64;
-				if (message.getMentions().getUsers().size() > 0)
+					sql.addEmote(channel);
+				}
+				if (message.getMentions().getUsers().size() > 0) {
 					messageConfig += 128;
-				if (message.getMentions().getChannels().size() > 0)
+					sql.addUserMention(channel);
+				}
+				if (message.getMentions().getChannels().size() > 0) {
 					messageConfig += 256;
-				if (message.getMentions().getRoles().size() > 0)
+					sql.addChannelMention(channel);
+				}
+				if (message.getMentions().getRoles().size() > 0) {
 					messageConfig += 512;
-				if (message.getStickers().size() > 0)
+					sql.addRoleMention(channel);
+				}
+				if (message.getStickers().size() > 0) {
 					messageConfig += 1024;
+					sql.addSticker(channel);
+				}
 				if ((messageConfig & threadingConfig) > 0) {
 					logger.log("INFO", "Creating thread for message " + message.getId() + "...");
 					message.createThreadChannel("Comments | Discussion").queue(t -> {
 						t.addThreadMember(message.getAuthor()).queue();
 						t.getManager().setAutoArchiveDuration(AutoArchiveDuration.TIME_24_HOURS).queue();
 					});
+					sql.addThread(channel);
 				}
 			}
 		} catch (SQLException e) {

@@ -39,6 +39,8 @@ public class ThreadyUtils {
 					.addField("Role-Mentions", 	  (threadingConfig & 512)  > 0 ? "✅ Yes" : "🚫 No", true)
 					.build();
 		} catch (SQLException e) {
+			Thready.logger.log("CRIT", "Couldn't retrieve config for channel " + channel.getId() + " in guild " + guild.getId() + "!");
+			Thready.logger.logStackTrace(e);
 			return new EmbedBuilder()
 					.setColor(new Color(0xFF, 0x55, 0x55))
 					.setDescription("Thready uses the following config for this channel. "
@@ -81,5 +83,53 @@ public class ThreadyUtils {
 	     .addOption("Channel-Mentions", "256", 	"En-/Disable Thready for messages containing channel-mentions.")
 	     .addOption("Role-Mentions", 	"512", 	"En-/Disable Thready for messages containing role-mentions.")
 	     .build();
+	}
+	
+	public static MessageEmbed getChannelStatsEmbed(Guild guild, MessageChannel channel) {
+		try {
+			return new EmbedBuilder()
+					.setColor(new Color(0x58, 0x65, 0xF2))
+					.setDescription("These stats only count since Thready joined this server and only since Thready reached version 1.1.0!")
+					.setFooter("Thready v" + Thready.VERSION + " by Ryeera", "https://cdn.discordapp.com/avatars/918245386441863218/8db6a3786a9d495f4fbe2cec55521ac4.png?size=64")
+					.setTimestamp(Instant.now())
+					.setTitle("Thready Stats for #" + channel.getName())
+					.addField("Created Threads",       String.valueOf(Thready.sql.getThreadCount(guild, channel)), true)
+					.addField("Sent Messages",         String.valueOf(Thready.sql.getMessageCount(guild, channel)), true)
+					.addField("Sent Links",            String.valueOf(Thready.sql.getLinkCount(guild, channel)), true)
+					.addField("Sent Images",           String.valueOf(Thready.sql.getImageCount(guild, channel)), true)
+					.addField("Sent Videos",           String.valueOf(Thready.sql.getVideoCount(guild, channel)), true)
+					.addField("Sent Files",            String.valueOf(Thready.sql.getFileCount(guild, channel)), true)
+					.addField("Sent Embeds",           String.valueOf(Thready.sql.getEmbedCount(guild, channel)), true)
+					.addField("Sent Emotes",           String.valueOf(Thready.sql.getEmoteCount(guild, channel)), true)
+					.addField("Sent Stickers",         String.valueOf(Thready.sql.getStickerCount(guild, channel)), true)
+					.addField("Sent User-Mentions",    String.valueOf(Thready.sql.getUserMentionCount(guild, channel)), true)
+					.addField("Sent Channel-Mentions", String.valueOf(Thready.sql.getChannelMentionCount(guild, channel)), true)
+					.addField("Sent Role-Mentions",    String.valueOf(Thready.sql.getRoleMentionCount(guild, channel)), true)
+					.build();
+		} catch (SQLException e) {
+			Thready.logger.log("CRIT", "Couldn't retrieve stats for channel " + channel.getId() + " in guild " + guild.getId() + "!");
+			Thready.logger.logStackTrace(e);
+			return new EmbedBuilder()
+					.setColor(new Color(0xFF, 0x55, 0x55))
+					.setDescription("**WARNING:** The config for this channel could not be loaded. This is most likely a temporary issue and will be fixed soon! "
+							+ "Run the `/stats`-command again and if the issue persists, please report it either on <https://discord.gg/ffrArfErfH> or "
+							+ "on <https://github.com/Ryeera/Thready>!")
+					.setFooter("Thready v" + Thready.VERSION + " by Ryeera", "https://cdn.discordapp.com/avatars/918245386441863218/8db6a3786a9d495f4fbe2cec55521ac4.png?size=64")
+					.setTimestamp(Instant.now())
+					.setTitle("Thready Stats for #" + channel.getName())
+					.addField("Created Threads",       "⚡ Unknown", true)
+					.addField("Sent Messages",         "⚡ Unknown", true)
+					.addField("Sent Links",            "⚡ Unknown", true)
+					.addField("Sent Images",           "⚡ Unknown", true)
+					.addField("Sent Videos",           "⚡ Unknown", true)
+					.addField("Sent Files",            "⚡ Unknown", true)
+					.addField("Sent Embeds",           "⚡ Unknown", true)
+					.addField("Sent Emotes",           "⚡ Unknown", true)
+					.addField("Sent Stickers",         "⚡ Unknown", true)
+					.addField("Sent User-Mentions",    "⚡ Unknown", true)
+					.addField("Sent Channel-Mentions", "⚡ Unknown", true)
+					.addField("Sent Role-Mentions",    "⚡ Unknown", true)
+					.build();
+		}
 	}
 }
