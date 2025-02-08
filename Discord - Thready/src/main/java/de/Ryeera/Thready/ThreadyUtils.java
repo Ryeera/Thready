@@ -7,6 +7,7 @@ import java.time.Instant;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel.AutoArchiveDuration;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
@@ -16,6 +17,12 @@ public class ThreadyUtils {
 	public static MessageEmbed getChannelConfigEmbed(Guild guild, MessageChannel channel) {
 		try {
 			int threadingConfig = Thready.sql.getThreadingConfig(guild, channel);
+			AutoArchiveDuration autoArchiveDuration = Thready.sql.getHideDuration(guild, channel);
+			String autoHideDuration = "Unparsable (Dafuq?)";
+			if (autoArchiveDuration == AutoArchiveDuration.TIME_1_HOUR) autoHideDuration = "1 Hour";
+			else if (autoArchiveDuration == AutoArchiveDuration.TIME_24_HOURS) autoHideDuration = "24 Hours";
+			else if (autoArchiveDuration == AutoArchiveDuration.TIME_3_DAYS) autoHideDuration = "3 Days";
+			else if (autoArchiveDuration == AutoArchiveDuration.TIME_1_WEEK) autoHideDuration = "1 Week";
 			
 			return new EmbedBuilder()
 					.setColor(new Color(0x58, 0x65, 0xF2))
@@ -25,7 +32,13 @@ public class ThreadyUtils {
 					.setFooter("Thready v" + Thready.VERSION + " by Ryeera", "https://cdn.discordapp.com/avatars/918245386441863218/8db6a3786a9d495f4fbe2cec55521ac4.png?size=64")
 					.setTimestamp(Instant.now())
 					.setTitle("Thready Config for #" + channel.getName())
+					.addBlankField(false)
 					.addField("Thready Enabled", Thready.sql.isEnabled(guild, channel) ? "✅ Yes" : "🚫 No", false)
+					.addField("Default Auto-Hide-Duration", autoHideDuration, false)
+					.addField("When the original Message is deleted", "Do Nothing|Hide Thread|Lock Thread|Delete Thread", false)
+					.addField("When the Thread Auto-Hides", "Do Nothing|Lock Thread|Delete Thread", false)
+					.addBlankField(false)
+					.addField("Message-Types Thready will create Threads for:", "", false)
 					.addField("All Messages", 	  (threadingConfig & 1)    > 0 ? "✅ Yes" : "🚫 No", true)
 					.addField("Links", 			  (threadingConfig & 2)    > 0 ? "✅ Yes" : "🚫 No", true)
 					.addField("Images", 		  (threadingConfig & 4)    > 0 ? "✅ Yes" : "🚫 No", true)
@@ -37,6 +50,7 @@ public class ThreadyUtils {
 					.addField("User-Mentions", 	  (threadingConfig & 128)  > 0 ? "✅ Yes" : "🚫 No", true)
 					.addField("Channel-Mentions", (threadingConfig & 256)  > 0 ? "✅ Yes" : "🚫 No", true)
 					.addField("Role-Mentions", 	  (threadingConfig & 512)  > 0 ? "✅ Yes" : "🚫 No", true)
+					.addBlankField(true)
 					.build();
 		} catch (SQLException e) {
 			Thready.logger.log("CRIT", "Couldn't retrieve config for channel " + channel.getId() + " in guild " + guild.getId() + "!");
@@ -52,37 +66,54 @@ public class ThreadyUtils {
 					.setFooter("Thready v" + Thready.VERSION + " by Ryeera", "https://cdn.discordapp.com/avatars/918245386441863218/8db6a3786a9d495f4fbe2cec55521ac4.png?size=64")
 					.setTimestamp(Instant.now())
 					.setTitle("Thready Config for #" + channel.getName())
-					.addField("Thready Enabled",  "⚡ Unknown", false)
-					.addField("All Messages", 	  "⚡ Unknown", true)
-					.addField("Links", 			  "⚡ Unknown", true)
-					.addField("Images", 		  "⚡ Unknown", true)
-					.addField("Videos", 		  "⚡ Unknown", true)
-					.addField("Files", 			  "⚡ Unknown", true)
-					.addField("Embeds", 		  "⚡ Unknown", true)
-					.addField("Emotes", 		  "⚡ Unknown", true)
-					.addField("Stickers", 		  "⚡ Unknown", true)
-					.addField("User-Mentions", 	  "⚡ Unknown", true)
-					.addField("Channel-Mentions", "⚡ Unknown", true)
-					.addField("Role-Mentions", 	  "⚡ Unknown", true)
+					.addBlankField(false)
+					.addField("Thready Enabled",                      "⚡ Unknown", false)
+					.addField("Default Auto-Hide-Duration",        "⚡ Unknown", false)
+					.addField("When the original Message is deleted", "⚡ Unknown", false)
+					.addField("When the Thread Auto-Archives",        "⚡ Unknown", false)
+					.addBlankField(false)
+					.addField("Message-Types Thready will create Threads for:", "", false)
+					.addField("All Messages", 	                      "⚡ Unknown", true)
+					.addField("Links", 			                      "⚡ Unknown", true)
+					.addField("Images", 		                      "⚡ Unknown", true)
+					.addField("Videos", 		                      "⚡ Unknown", true)
+					.addField("Files", 			                      "⚡ Unknown", true)
+					.addField("Embeds", 		                      "⚡ Unknown", true)
+					.addField("Emotes", 		                      "⚡ Unknown", true)
+					.addField("Stickers", 		                      "⚡ Unknown", true)
+					.addField("User-Mentions", 	                      "⚡ Unknown", true)
+					.addField("Channel-Mentions",                     "⚡ Unknown", true)
+					.addField("Role-Mentions", 	                      "⚡ Unknown", true)
+					.addBlankField(true)
 					.build();
 		}
 	}
 	
 	public static SelectMenu getOptionMenu(MessageChannel channel) {
 		return StringSelectMenu.create("config:" + channel.getId() + ":0")
-	     .setPlaceholder("Select message-type...")
-	     .addOption("Messages", 		"1", 	"En-/Disable Thready for all messages.")
-	     .addOption("Links", 			"2", 	"En-/Disable Thready for messages containing links.")
-	     .addOption("Images", 			"4", 	"En-/Disable Thready for messages containing images.")
-	     .addOption("Videos", 			"8", 	"En-/Disable Thready for messages containing videos.")
-	     .addOption("Files", 			"16", 	"En-/Disable Thready for messages containing files.")
-	     .addOption("Embeds", 			"32", 	"En-/Disable Thready for messages containing embeds.")
-	     .addOption("Emotes", 			"64", 	"En-/Disable Thready for messages containing emotes.")
-	     .addOption("Stickers", 		"1024",	"En-/Disable Thready for messages containing stickers.")
-	     .addOption("User-Mentions", 	"128", 	"En-/Disable Thready for messages containing user-mentions.")
-	     .addOption("Channel-Mentions", "256", 	"En-/Disable Thready for messages containing channel-mentions.")
-	     .addOption("Role-Mentions", 	"512", 	"En-/Disable Thready for messages containing role-mentions.")
-	     .build();
+				.setPlaceholder("Select message-type...")
+				.addOption("Messages", 			"1", 	"En-/Disable Thready for all messages.")
+				.addOption("Links", 			"2", 	"En-/Disable Thready for messages containing links.")
+				.addOption("Images", 			"4", 	"En-/Disable Thready for messages containing images.")
+				.addOption("Videos", 			"8", 	"En-/Disable Thready for messages containing videos.")
+				.addOption("Files", 			"16", 	"En-/Disable Thready for messages containing files.")
+				.addOption("Embeds", 			"32", 	"En-/Disable Thready for messages containing embeds.")
+				.addOption("Emotes", 			"64", 	"En-/Disable Thready for messages containing emotes.")
+				.addOption("Stickers", 			"1024",	"En-/Disable Thready for messages containing stickers.")
+				.addOption("User-Mentions", 	"128", 	"En-/Disable Thready for messages containing user-mentions.")
+				.addOption("Channel-Mentions", 	"256", 	"En-/Disable Thready for messages containing channel-mentions.")
+				.addOption("Role-Mentions", 	"512", 	"En-/Disable Thready for messages containing role-mentions.")
+				.build();
+	}
+	
+	public static SelectMenu getAutoHideMenu(MessageChannel channel) {
+		return StringSelectMenu.create("autoHide:" + channel.getId())
+				.setPlaceholder("Select a new Auto-Hide-Time")
+				.addOption("1 Hour", "0")
+				.addOption("24 Hours", "1")
+				.addOption("3 Days", "2")
+				.addOption("1 Week", "3")
+				.build();
 	}
 	
 	public static MessageEmbed getChannelStatsEmbed(Guild guild, MessageChannel channel) {

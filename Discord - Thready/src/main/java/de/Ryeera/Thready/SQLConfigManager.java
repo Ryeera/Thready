@@ -4,11 +4,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel.AutoArchiveDuration;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 
 public class SQLConfigManager {
 
-	private static final int CONFIG_VERSION = 2;
+	private static final int CONFIG_VERSION = 3;
 	
 	private SQLConnector sql;
 	private DragoLogger logger;
@@ -29,6 +30,9 @@ public class SQLConfigManager {
 				+ "`channel` BIGINT(20) UNSIGNED NOT NULL COMMENT 'The ID of the Channel.' , "
 				+ "`config` SMALLINT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'The binary-encoded config for this Channel.' , "
 				+ "`enabled` TINYINT(1) UNSIGNED NOT NULL DEFAULT FALSE COMMENT 'Whether Thready for this Channel is enabled or not.' , "
+				+ "`auto-hide` TINYINT UNSIGNED NOT NULL DEFAULT '1' COMMENT 'The auto-hide-duration used for threads created by Thready. 0 = 1 Hour, 1 = 24 Hours, 2 = 3 Days, 3 = 1 Week' , "
+				+ "`on-delete` TINYINT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'The action to take if the original message is deleted. 0 = Do Nothing, 1 = Hide Thread, 2 = Lock Thread, 3 = Delete Thread' , "
+				+ "`on-hide` TINYINT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'The action to take if the thread is auto-hidden. 0 = Do Nothing, 1 = Lock Thread, 2 = Delete Thread' , "
 				+ "PRIMARY KEY (`channel`)"
 				+ ") ENGINE = InnoDB COMMENT = 'The configuration for each Channel.';"))
 			this.logger.log("INFO", "New table \"channel\" created.");
@@ -60,6 +64,7 @@ public class SQLConfigManager {
 		ResultSet threadyConfig = sql.executeQuery("SELECT * FROM `thready`;");
 		if (threadyConfig.next()) {
 			int source = threadyConfig.getInt("config-version");
+			int sourceOrg = source;
 			if (source < CONFIG_VERSION)
 				logger.log("INFO", "Outdated config detected! Applying migrations...");
 			if (source == 1) {
@@ -68,8 +73,18 @@ public class SQLConfigManager {
 					logger.log("INFO", "\"channels.stat_threads_created\" deleted (no data was ever written to it, so it's save).");
 				if (sql.executeUpdate("INSERT INTO `channel-stats` (`channel`) SELECT `channel` FROM `channels`;"))
 					logger.log("INFO", "Set up empty stats-table for known channels.");
+				source = 2;
 			}
-			if (source < CONFIG_VERSION && sql.executeUpdate("UPDATE `thready` SET `config-version` = " + CONFIG_VERSION + " WHERE `config-version` = " + source + ";"))
+			if (source == 2) {
+				logger.log("INFO", "Migrating config-version 2 -> 3...");
+				if (sql.executeUpdate("ALTER TABLE `channels` "
+						+ "ADD `auto-hide` TINYINT UNSIGNED NOT NULL DEFAULT '1' COMMENT 'The auto-hide-duration used for threads created by Thready. 0 = 1 Hour, 1 = 24 Hours, 2 = 3 Days, 3 = 1 Week' AFTER `enabled`, "
+						+ "ADD `on-delete` TINYINT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'The action to take if the original message is deleted. 0 = Do Nothing, 1 = Hide Thread, 2 = Lock Thread, 3 = Delete Thread' AFTER `auto-hide`, "
+						+ "ADD `on-hide` TINYINT UNSIGNED NOT NULL DEFAULT '0' COMMENT 'The action to take if the thread is auto-hidden. 0 = Do Nothing, 1 = Lock Thread, 2 = Delete Thread' AFTER `on-delete`;"))
+					logger.log("INFO", "Created new columns \"auto-archive\", \"on-delete\" and \"on-archive\".");
+				source = 3;
+			}
+			if (sourceOrg < CONFIG_VERSION && sql.executeUpdate("UPDATE `thready` SET `config-version` = " + CONFIG_VERSION + " WHERE `config-version` = " + sourceOrg + ";"))
 				logger.log("INFO", "Migrations applied!");
 		} else {
 			if (sql.executeUpdate("INSERT INTO `thready` (`config-version`) VALUES ('" + CONFIG_VERSION + "');")) {
@@ -186,6 +201,21 @@ public class SQLConfigManager {
 		if (channel.getIdLong() == cacheChannel)
 			clearCache();
 		return sql.executeUpdate("UPDATE `channels` SET `enabled`=" + enabled + " WHERE `channel`='" + channel.getId() + "'");
+	}
+
+	public AutoArchiveDuration getHideDuration(Guild guild, MessageChannel channel) throws SQLException {
+		int encodedArchiveDuration = getChannelConfig(guild, channel).getInt("auto-hide");
+		if (encodedArchiveDuration == 0) return AutoArchiveDuration.TIME_1_HOUR;
+		if (encodedArchiveDuration == 1) return AutoArchiveDuration.TIME_24_HOURS;
+		if (encodedArchiveDuration == 2) return AutoArchiveDuration.TIME_3_DAYS;
+		if (encodedArchiveDuration == 3) return AutoArchiveDuration.TIME_1_WEEK;
+		return AutoArchiveDuration.TIME_24_HOURS;
+	}
+	
+	public boolean setHideDuration(MessageChannel channel, int encodedHideDuration) {
+		if (channel.getIdLong() == cacheChannel)
+			clearCache();
+		return sql.executeUpdate("UPDATE `channels` SET `auto-hide`=" + encodedHideDuration + " WHERE `channel`='" + channel.getId() + "'");
 	}
 	
 	public boolean enableThreadingOption(MessageChannel channel, int option) {

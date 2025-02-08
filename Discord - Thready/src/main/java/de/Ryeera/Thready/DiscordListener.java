@@ -8,7 +8,6 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
-import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel.AutoArchiveDuration;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -46,6 +45,7 @@ public class DiscordListener extends ListenerAdapter {
 			SelectMenu menu = ThreadyUtils.getOptionMenu(channel);
 			Button buttonEnable = Button.success("enableOption:" + channel.getId(), "Enable").asDisabled();
 			Button buttonDisable = Button.danger("disableOption:" + channel.getId(), "Disable").asDisabled();
+			SelectMenu autoHideMenu = ThreadyUtils.getAutoHideMenu(channel);
 			
 			try {
 				Button buttonChannel = sql.isEnabled(guild, channel) ? 
@@ -56,6 +56,7 @@ public class DiscordListener extends ListenerAdapter {
 						.addActionRow(menu)
 						.addActionRow(buttonEnable, buttonDisable)
 						.addActionRow(buttonChannel)
+						.addActionRow(autoHideMenu)
 						.setEphemeral(true)
 						.queue();
 			} catch (SQLException e) {
@@ -74,28 +75,35 @@ public class DiscordListener extends ListenerAdapter {
 	public void onStringSelectInteraction(StringSelectInteractionEvent event) {
 		Guild guild = event.getGuild();
 		MessageChannel channel = event.getMessageChannel();
-		List<ActionComponent> buttons = event.getMessage().getActionRows().get(1).getActionComponents();
-		ActionRow buttonrow = event.getMessage().getActionRows().get(1);
-		try {
-			if ((Integer.parseInt(event.getSelectedOptions().get(0).getValue()) & sql.getThreadingConfig(guild, channel)) > 0) {
-				buttonrow = ActionRow.of(buttons.get(0).asDisabled(), buttons.get(1).asEnabled());
-			} else {
-				buttonrow = ActionRow.of(buttons.get(0).asEnabled(), buttons.get(1).asDisabled());
+		if (event.getComponentId().startsWith("config:")) {
+			List<ActionComponent> buttons = event.getMessage().getActionRows().get(1).getActionComponents();
+			ActionRow buttonrow = event.getMessage().getActionRows().get(1);
+			try {
+				if ((Integer.parseInt(event.getSelectedOptions().get(0).getValue()) & sql.getThreadingConfig(guild, channel)) > 0) {
+					buttonrow = ActionRow.of(buttons.get(0).asDisabled(), buttons.get(1).asEnabled());
+				} else {
+					buttonrow = ActionRow.of(buttons.get(0).asEnabled(), buttons.get(1).asDisabled());
+				}
+				event.editComponents(
+					ActionRow.of(
+						event.getSelectMenu().createCopy()
+							.setPlaceholder(event.getSelectedOptions().get(0).getLabel())
+							.setId("config:" + channel.getId() + ":" + event.getSelectedOptions().get(0).getValue())
+							.build()
+					), 
+					buttonrow, 
+					event.getMessage().getActionRows().get(2),
+					event.getMessage().getActionRows().get(3)
+				).queue();
+			} catch (SQLException e) {
+				event.reply("🚫 There was an error trying to get your config! Please try again!").queue();
+				logger.log("ERROR", "An error occured trying to get the config for channel " + channel.getId() + " in guild " + guild.getId() + "!");
+				logger.logStackTrace(e);
 			}
-			event.editComponents(
-				ActionRow.of(
-					event.getSelectMenu().createCopy()
-						.setPlaceholder(event.getSelectedOptions().get(0).getLabel())
-						.setId("config:" + channel.getId() + ":" + event.getSelectedOptions().get(0).getValue())
-						.build()
-				), 
-				buttonrow, 
-				event.getMessage().getActionRows().get(2)
-			).queue();
-		} catch (SQLException e) {
-			event.reply("🚫 There was an error trying to get your config! Please try again!").queue();
-			logger.log("ERROR", "An error occured trying to get the config for channel " + channel.getId() + " in guild " + guild.getId() + "!");
-			logger.logStackTrace(e);
+		} else if (event.getComponentId().startsWith("autoHide:")) {
+			sql.setHideDuration(channel, Integer.parseInt(event.getSelectedOptions().get(0).getValue()));
+			event.editMessageEmbeds(ThreadyUtils.getChannelConfigEmbed(guild, channel)).queue();
+			event.editSelectMenu(event.getSelectMenu().createCopy().setPlaceholder("New Auto-Hide-Option: " + event.getSelectedOptions().get(0).getLabel()).build()).queue();
 		}
 	}
 	
@@ -126,7 +134,7 @@ public class DiscordListener extends ListenerAdapter {
 				} else {
 					buttonrow = ActionRow.of(buttons.get(0).asEnabled(), buttons.get(1).asDisabled());
 				}
-				event.editComponents(actionRows.get(0), buttonrow, actionRows.get(2)).queue();
+				event.editComponents(actionRows.get(0), buttonrow, actionRows.get(2), actionRows.get(3)).queue();
 			} catch (SQLException e) {
 				event.reply("🚫 There was an error trying to get your config! Please try again!").queue();
 				logger.log("ERROR", "An error occured trying to get the config for channel " + channel.getId() + " in guild " + event.getGuild().getId() + "!");
@@ -203,9 +211,8 @@ public class DiscordListener extends ListenerAdapter {
 			}
 			if (threadingConfig != 0 && (messageConfig & threadingConfig) > 0) {
 				logger.log("INFO", "Creating thread for message " + message.getId() + "...");
-				message.createThreadChannel("Comments | Discussion").queue(t -> {
+				message.createThreadChannel("Comments | Discussion").setAutoArchiveDuration(sql.getHideDuration(guild, channel)).queue(t -> {
 					t.addThreadMember(message.getAuthor()).queue();
-					t.getManager().setAutoArchiveDuration(AutoArchiveDuration.TIME_24_HOURS).queue();
 				});
 				sql.addThread(channel);
 			}

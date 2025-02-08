@@ -19,7 +19,7 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 public class DiscordConnector {
 	
-	private JDA jda;
+	public JDA jda;
 	private DragoLogger logger;
 	
 	public DiscordConnector(String token, ListenerAdapter listener, DragoLogger logger) {
